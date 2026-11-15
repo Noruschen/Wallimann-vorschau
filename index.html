@@ -1038,7 +1038,7 @@ select{font:inherit;padding:9px 10px;border:1px solid var(--ink);background:var(
   <div><h3>Unternehmen</h3><a href="#unternehmen">Über uns</a><a href="#team">Mitarbeitende</a><a href="#meilensteine">Meilensteine</a><a href="#ausbildung">Ausbildung</a><a href="#stellen">Stellenangebote</a><a href="#kundenstimmen">Kundenstimmen</a><a href="#aktuell">Aktuell</a><a href="#rundgang">Rundgang</a></div>
   <div><h3>Kontakt</h3>Wallimann Medien und Kommunikation AG<br>Aargauerstrasse 12<br>6215 Beromünster<br><span class="sel">Telefon 041 932 40 50</span><br><span class="sel">WhatsApp 079 694 74 22</span><br><a href="mailto:admin@wallimann.ch">admin@wallimann.ch</a><a href="#kontakt">Anfrage senden</a></div>
   <div><h3>Folgen Sie uns</h3><a href="https://www.facebook.com/wallimannmedienkommunikation">Facebook</a><a href="https://www.instagram.com/wallimann_weiss_wie/">Instagram</a><a href="https://www.linkedin.com/company/wallimann-druck-und-verlag-ag/">LinkedIn</a></div>
-  <div class="unten"><span>© Wallimann Medien und Kommunikation AG</span><a href="#impressum">Impressum</a><a href="#impressum">Datenschutz</a><span>Entwurf für die interne Diskussion, noch nicht die offizielle Website.</span></div>
+  <div class="unten"><span>© Wallimann Medien und Kommunikation AG</span><a href="#impressum">Impressum</a><a href="#impressum">Datenschutz</a><span>Entwurf für die interne Diskussion, noch nicht die offizielle Website.</span><span>Stand 15.11.2026, 21:51</span></div>
 </div></footer>
 
 <script src="modell/haus-modell.js"></script>
@@ -1099,16 +1099,43 @@ select{font:inherit;padding:9px 10px;border:1px solid var(--ink);background:var(
   var SPAN=0, probe=document.createElement('div');
   probe.style.cssText='position:fixed;left:0;top:0;width:0;height:100vh;visibility:hidden;pointer-events:none';
   document.body.appendChild(probe);
+  /* So weit ist die Bühne im Rundgang gewandert, 0 bis SPAN. Direkt gemessen, nicht aus der Scrollposition gerechnet:
+     das stimmt auch dann, wenn sich Kopfzeile oder Browserleiste gerade ändern. */
+  function off(){ return pin.getBoundingClientRect().top-journey.getBoundingClientRect().top; }
   function layout(){
     var s=Math.round((probe.offsetHeight||window.innerHeight)*0.86)*(N-1);
-    var t=SPAN&&pin.offsetHeight?(window.scrollY-startY())/SPAN:0;
+    var t=SPAN&&pin.offsetHeight?off()/SPAN:0;
     var changed=s!==SPAN; SPAN=s;
     journey.style.height=(SPAN+pin.offsetHeight)+'px';
-    if(changed&&t>0&&t<=1) window.scrollTo(0,Math.round(startY()+t*SPAN));   // Fenster wurde anders gross: bei der gleichen Station bleiben
+    if(changed&&want<0&&t>0.001&&t<0.999){                     // Fenster wurde anders gross: bei der gleichen Station bleiben
+      for(var k=0;k<2;k++){ var d=t*SPAN-off(); if(Math.abs(d)>2) window.scrollBy(0,Math.round(d)); }
+    }
   }
-  function startY(){ return journey.offsetTop-(parseFloat(getComputedStyle(pin).top)||0); }
-  function stationTop(i){ return startY()+SPAN*(i/(N-1)); }
-  function go(i){ window.scrollTo({top:Math.round(stationTop(i)),behavior:reduce.matches?'auto':'smooth'}); }
+  function stick(){ var v=parseFloat(getComputedStyle(pin).top); if(!(v>=0&&v<400)){ var hd=document.querySelector('.head'); v=hd?hd.getBoundingClientRect().bottom:0; } return v; }
+  function startY(){ return journey.getBoundingClientRect().top+window.scrollY-stick(); }
+  function stationTop(i){
+    var z=SPAN*(i/(N-1)), o=off();
+    if(o>0.5&&o<SPAN-0.5) return window.scrollY+z-o;            // mitten im Rundgang: genau gemessen
+    return startY()+z;
+  }
+  /* Sprung zu einer Station. Nach dem Rollen wird nachgemessen und wenn nötig korrigiert, bis die Station wirklich stimmt.
+     Wer selbst scrollt, tippt oder eine Taste drückt, übernimmt wieder. */
+  var want=-1, wantLast=NaN, wantStill=0, wantTries=0, wantTimer=0;
+  function go(i,jump){
+    want=i; wantLast=NaN; wantStill=0; wantTries=0;
+    window.scrollTo({top:Math.round(stationTop(i)),behavior:(jump||reduce.matches)?'auto':'smooth'});
+    clearInterval(wantTimer); wantTimer=setInterval(watch,120);
+  }
+  function watch(){
+    if(want<0){ clearInterval(wantTimer); return; }
+    var y=window.scrollY;
+    if(!(Math.abs(y-wantLast)<=1)){ wantLast=y; wantStill=0; return; }      // rollt noch
+    if(++wantStill<3) return;                                               // erst wenn die Seite ruhig steht
+    var d=stationTop(want)-y;
+    if(Math.abs(d)>3&&wantTries<8){ wantTries++; wantStill=0; wantLast=NaN; window.scrollTo(0,Math.round(y+d)); req(); return; }
+    if(wantStill>=8||wantTries>=8){ want=-1; clearInterval(wantTimer); }   // eine Sekunde ruhig und richtig: fertig
+  }
+  ['wheel','touchstart','pointerdown','keydown'].forEach(function(ev){ window.addEventListener(ev,function(){ want=-1; },{passive:true,capture:true}); });
   function ease(u){ u=Math.min(1,Math.max(0,u)); return u*u*(3-2*u); }
 
   function update(){
@@ -1116,7 +1143,7 @@ select{font:inherit;padding:9px 10px;border:1px solid var(--ink);background:var(
     if(!ready||!pin.offsetHeight) return;
     var W=pin.clientWidth,H=pin.clientHeight,mobile=window.innerWidth<600;
     var span=SPAN||1;
-    var t=Math.min(N-1,Math.max(0,(window.scrollY-startY())/span*(N-1)));
+    var t=Math.min(N-1,Math.max(0,off()/span*(N-1)));
     var i=Math.min(N-2,Math.floor(t)), f=t-i, u=ease((f-0.18)/0.64);
     var act=f<0.5?i:i+1;
     // Die Skizze nutzt die ganze Fläche. Das Textfeld liegt durchscheinend darüber und wird nur zum Teil ausgespart.
@@ -1163,12 +1190,13 @@ select{font:inherit;padding:9px 10px;border:1px solid var(--ink);background:var(
     if(name==='rundgang'){ layout(); req(); }
     return name;
   }
-  window.addEventListener('hashchange',function(){ route(); window.scrollTo(0,0); });
+  window.addEventListener('hashchange',function(){ route(); if(want<0) window.scrollTo(0,0); });
   burger.addEventListener('click',function(){ var o=menu.classList.toggle('open'); burger.setAttribute('aria-expanded',o?'true':'false'); });
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-station]'); if(b){
       var ix=ST.findIndex(function(s){return s.id===b.dataset.station});
-      var jump=function(){ layout(); window.scrollTo(0,Math.round(stationTop(ix))); req(); };
+      e.preventDefault();
+      var jump=function(){ layout(); go(ix,true); req(); };
       if((location.hash||'#start')!=='#rundgang'){ history.replaceState(null,'','#rundgang'); route(); }
       requestAnimationFrame(jump);
       return;
