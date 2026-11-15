@@ -1094,9 +1094,20 @@ select{font:inherit;padding:9px 10px;border:1px solid var(--ink);background:var(
   });
   var railBtns=[].slice.call(rail.children);
 
-  function layout(){ journey.style.height=(pin.offsetHeight*(1+(N-1)*0.95))+'px'; }
+  /* Der Weg von Station zu Station ist fest und hängt nicht von der Höhe der Bühne ab. Sonst verschieben sich die Sprungziele,
+     sobald die Kopfzeile kleiner wird oder am Handy die Browserleiste einklappt, und man landet bei einer anderen Station. */
+  var SPAN=0, probe=document.createElement('div');
+  probe.style.cssText='position:fixed;left:0;top:0;width:0;height:100vh;visibility:hidden;pointer-events:none';
+  document.body.appendChild(probe);
+  function layout(){
+    var s=Math.round((probe.offsetHeight||window.innerHeight)*0.86)*(N-1);
+    var t=SPAN&&pin.offsetHeight?(window.scrollY-startY())/SPAN:0;
+    var changed=s!==SPAN; SPAN=s;
+    journey.style.height=(SPAN+pin.offsetHeight)+'px';
+    if(changed&&t>0&&t<=1) window.scrollTo(0,Math.round(startY()+t*SPAN));   // Fenster wurde anders gross: bei der gleichen Station bleiben
+  }
   function startY(){ return journey.offsetTop-(parseFloat(getComputedStyle(pin).top)||0); }
-  function stationTop(i){ return startY()+(journey.offsetHeight-pin.offsetHeight)*(i/(N-1)); }
+  function stationTop(i){ return startY()+SPAN*(i/(N-1)); }
   function go(i){ window.scrollTo({top:Math.round(stationTop(i)),behavior:reduce.matches?'auto':'smooth'}); }
   function ease(u){ u=Math.min(1,Math.max(0,u)); return u*u*(3-2*u); }
 
@@ -1104,7 +1115,7 @@ select{font:inherit;padding:9px 10px;border:1px solid var(--ink);background:var(
     ticking=false;
     if(!ready||!pin.offsetHeight) return;
     var W=pin.clientWidth,H=pin.clientHeight,mobile=window.innerWidth<600;
-    var span=journey.offsetHeight-pin.offsetHeight;
+    var span=SPAN||1;
     var t=Math.min(N-1,Math.max(0,(window.scrollY-startY())/span*(N-1)));
     var i=Math.min(N-2,Math.floor(t)), f=t-i, u=ease((f-0.18)/0.64);
     var act=f<0.5?i:i+1;
