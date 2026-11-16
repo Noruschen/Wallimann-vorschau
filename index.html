@@ -298,6 +298,13 @@ select{font:inherit;padding:9px 10px;border:1px solid var(--ink);background:var(
 :root.tour{--headsp:78px}
 .head-top{height:32px;max-width:1320px;margin-inline:auto;padding-left:var(--gl);padding-right:var(--gr);display:flex;align-items:end;gap:22px;font-size:15px;color:var(--muted)}
 .head-top a{color:var(--muted);text-decoration:none}
+/* Die Zeile bleibt immer einzeilig. Wird es eng (kleines iPhone oder grössere Schrift in Safari), fällt zuerst das Wort «Telefon» weg,
+   dann wird die Mailadresse ausgeblendet (gekürzt wäre sie nutzlos). Sonst rutscht der Umbruch nach oben unter die Statusleiste. */
+.head-top{white-space:nowrap;overflow:hidden}
+.head-top>*{flex:none}
+.head-top .mail{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:400px){ .head-top .wort{display:none} }
+@media (max-width:339px){ .head-top .mail{display:none} }
 .head-top a:hover{color:var(--red)}
 .head-top .such-auf{display:none;margin-left:auto;font:inherit;font-weight:600;background:none;border:0;padding:0;color:var(--ink);text-decoration:underline;cursor:pointer}
 .kompakt .head-top{display:none}
@@ -439,7 +446,7 @@ select{font:inherit;padding:9px 10px;border:1px solid var(--ink);background:var(
 </style>
 
 <div class="head" id="head">
-  <div class="head-top"><span class="sel">Telefon 041 932 40 50</span><a href="mailto:admin@wallimann.ch">admin@wallimann.ch</a><button class="such-auf" type="button">Suchen</button></div>
+  <div class="head-top"><a class="kopf-tel" href="tel:+41419324050"><span class="wort">Telefon </span>041 932 40 50</a><a class="mail" href="mailto:admin@wallimann.ch">admin@wallimann.ch</a><button class="such-auf" type="button">Suchen</button></div>
   <div class="head-in">
     <a class="mark" href="#start" aria-label="Zur Startseite"><img src="foto/logo-a.png" alt="wallimann medien und kommunikation" width="792" height="214"></a>
     <nav class="menu" id="menu" aria-label="Hauptmenü">
@@ -1038,7 +1045,7 @@ select{font:inherit;padding:9px 10px;border:1px solid var(--ink);background:var(
   <div><h3>Unternehmen</h3><a href="#unternehmen">Über uns</a><a href="#team">Mitarbeitende</a><a href="#meilensteine">Meilensteine</a><a href="#ausbildung">Ausbildung</a><a href="#stellen">Stellenangebote</a><a href="#kundenstimmen">Kundenstimmen</a><a href="#aktuell">Aktuell</a><a href="#rundgang">Rundgang</a></div>
   <div><h3>Kontakt</h3>Wallimann Medien und Kommunikation AG<br>Aargauerstrasse 12<br>6215 Beromünster<br><span class="sel">Telefon 041 932 40 50</span><br><span class="sel">WhatsApp 079 694 74 22</span><br><a href="mailto:admin@wallimann.ch">admin@wallimann.ch</a><a href="#kontakt">Anfrage senden</a></div>
   <div><h3>Folgen Sie uns</h3><a href="https://www.facebook.com/wallimannmedienkommunikation">Facebook</a><a href="https://www.instagram.com/wallimann_weiss_wie/">Instagram</a><a href="https://www.linkedin.com/company/wallimann-druck-und-verlag-ag/">LinkedIn</a></div>
-  <div class="unten"><span>© Wallimann Medien und Kommunikation AG</span><a href="#impressum">Impressum</a><a href="#impressum">Datenschutz</a><span>Entwurf für die interne Diskussion, noch nicht die offizielle Website.</span><span>Stand 15.11.2026, 21:51</span></div>
+  <div class="unten"><span>© Wallimann Medien und Kommunikation AG</span><a href="#impressum">Impressum</a><a href="#impressum">Datenschutz</a><span>Entwurf für die interne Diskussion, noch nicht die offizielle Website.</span><span>Stand 16.11.2026, 12:14</span></div>
 </div></footer>
 
 <script src="modell/haus-modell.js"></script>
